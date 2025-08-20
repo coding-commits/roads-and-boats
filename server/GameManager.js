@@ -160,8 +160,10 @@ class GameManager {
           
         case 'toggle_ready':
           console.log('Processing toggle_ready action:', action);
+          console.log('Before - Ready players:', Array.from(game.readyPlayers));
           game.setPlayerReady(action.playerId, action.data.ready);
-          console.log('Updated ready players:', Array.from(game.readyPlayers));
+          console.log('After - Ready players:', Array.from(game.readyPlayers));
+          console.log('Game JSON ready players:', Array.from(game.readyPlayers));
           break;
           
         case 'end_phase':

@@ -7,6 +7,10 @@ export class UIManager {
     this.refreshInterval = null;
   }
 
+  isPlayerReady(game, playerId) {
+    return game.readyPlayers && Array.isArray(game.readyPlayers) && game.readyPlayers.includes(playerId);
+  }
+
   showMenuScreen() {
     this.hideAll();
     document.getElementById('menuScreen').classList.remove('hidden');
@@ -132,6 +136,8 @@ export class UIManager {
 
   updateRoomLobby(game) {
     console.log('Updating room lobby with game:', game);
+    console.log('Ready players from server:', game.readyPlayers);
+    console.log('Current player ID:', this.gameClient.playerId);
     
     try {
       // Update room title and info
@@ -166,7 +172,7 @@ export class UIManager {
     players.forEach(player => {
       console.log('Processing player:', player);
       const playerDiv = document.createElement('div');
-      const isReady = (game.readyPlayers && game.readyPlayers.includes && game.readyPlayers.includes(player.id)) || false;
+      const isReady = this.isPlayerReady(game, player.id);
       const isCreator = player.id === game.creatorId;
       const isCurrentUser = player.id === this.gameClient.playerId;
       
@@ -216,11 +222,19 @@ export class UIManager {
     const currentPlayer = players.find(p => p.id === this.gameClient.playerId);
     
     const isCreator = currentPlayer && currentPlayer.id === game.creatorId;
-    const isReady = (game.readyPlayers && Array.isArray(game.readyPlayers) && game.readyPlayers.includes(this.gameClient.playerId)) || false;
+    const isReady = this.isPlayerReady(game, this.gameClient.playerId);
     const allReady = game.readyPlayers && players.length > 0 && players.length === game.readyPlayers.length;
     const canStart = players.length >= 2 && allReady;
     
-    console.log('Button state:', { isCreator, isReady, canStart, players: players.length, readyCount: game.readyPlayers?.length });
+    console.log('Button state:', { 
+      isCreator, 
+      isReady, 
+      canStart, 
+      players: players.length, 
+      readyCount: game.readyPlayers?.length,
+      readyPlayersArray: game.readyPlayers,
+      currentPlayerId: this.gameClient.playerId
+    });
     
     // Update ready button
     if (isReady) {

@@ -124,6 +124,7 @@ io.on('connection', (socket) => {
   socket.on('game_action', (data) => {
     try {
       const { gameId, action } = data;
+      console.log('Received game_action:', action.type, 'from player:', action.playerId);
       const result = gameManager.executeAction(gameId, action);
       
       if (result.success) {

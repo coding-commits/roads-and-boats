@@ -103,11 +103,6 @@ class RoadsAndBoatsApp {
       this.uiManager.showMessage('Game started!', 'success');
     });
 
-    this.gameClient.on('game_update', (data) => {
-      this.gameRenderer.setGame(data.game);
-      this.uiManager.updateGameState(data.game);
-    });
-
     this.gameClient.on('phase_changed', (data) => {
       this.uiManager.showMessage(`Phase changed to: ${data.newPhase}`, 'success');
     });
@@ -143,10 +138,13 @@ class RoadsAndBoatsApp {
 
     this.gameClient.on('game_update', (data) => {
       console.log('Received game update:', data);
+      console.log('Game ready players from server:', data.game.readyPlayers);
+      console.log('Action that triggered update:', data.action);
       if (data.game.isStarted) {
         this.gameRenderer.setGame(data.game);
         this.uiManager.updateGameState(data.game);
       } else {
+        console.log('Calling updateRoomLobby because game not started');
         this.uiManager.updateRoomLobby(data.game);
       }
     });
