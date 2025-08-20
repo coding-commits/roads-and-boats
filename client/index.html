@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roads and Boats - Online Multiplayer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .game-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 150px);
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-board-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        #gameBoard {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        .menu-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            gap: 20px;
+        }
+        
+        .menu-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 400px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn.ready {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn.ready:hover {
+            background: linear-gradient(45deg, #45a049, #388e3c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin: 5px;
+            width: 200px;
+        }
+        
+        .input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .player-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .player-score {
+            color: #666;
+        }
+        
+        .game-controls {
+            margin-top: 20px;
+        }
+        
+        .phase-indicator {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .resource-list {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #f44336;
+        }
+        
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .lobby-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .game-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        
+        .game-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .game-item:hover {
+            background-color: #f0f8ff;
+            transform: translateX(3px);
+        }
+        
+        .game-item:last-child {
+            border-bottom: none;
+        }
+        
+        .game-item-info {
+            flex: 1;
+        }
+        
+        .game-item-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .game-item-details {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .game-item-status {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .room-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .room-header h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        
+        .room-players-list {
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .room-player {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .room-player.ready {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        
+        .room-player.creator {
+            border-left-color: #ffa726;
+            background: #fff8e1;
+        }
+        
+        .room-player.current-user {
+            border-left-color: #2196f3;
+            background: #e3f2fd;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        }
+        
+        .room-player.current-user.creator {
+            border-left-color: #2196f3;
+            background: linear-gradient(135deg, #e3f2fd 0%, #fff8e1 100%);
+        }
+        
+        .room-player-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .room-player.current-user .room-player-name {
+            color: #1976d2;
+            font-weight: 900;
+        }
+        
+        .room-player-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: #ddd;
+            color: #666;
+        }
+        
+        .room-player-status.ready {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .room-player-status.creator {
+            background: #ffa726;
+            color: white;
+        }
+        
+        .room-player-status.current-user {
+            background: #2196f3;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .room-controls {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .room-messages {
+            margin-top: 15px;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+        
+        .room-message {
+            padding: 5px 0;
+            color: #666;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .room-message:last-child {
+            border-bottom: none;
+        }
+        
+        .empty-rooms {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .hex {
+            stroke: #333;
+            stroke-width: 1;
+            cursor: pointer;
+        }
+        
+        .hex:hover {
+            stroke-width: 2;
+            stroke: #ff6b6b;
+        }
+        
+        .transporter {
+            cursor: pointer;
+        }
+        
+        .transporter:hover {
+            opacity: 0.8;
+        }
+        
+        .selected {
+            stroke: #ff6b6b;
+            stroke-width: 3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Roads and Boats</h1>
+            <p>Online Multiplayer Board Game</p>
+        </div>
+        
+        <div id="menuScreen" class="menu-screen">
+            <div class="menu-card">
+                <h2>Welcome to Roads and Boats</h2>
+                <div id="playerNameSection">
+                    <input type="text" id="playerNameInput" class="input" placeholder="Enter your name" maxlength="20">
+                    <br>
+                    <button id="setNameBtn" class="btn">Set Name</button>
+                </div>
+                
+                <div id="gameMenu" class="hidden">
+                    <div id="lobbyView">
+                        <div class="lobby-header">
+                            <h3>Active Rooms</h3>
+                            <div id="gameMenuButtons">
+                                <button id="createGameBtn" class="btn">Create New Game</button>
+                                <button id="refreshGamesBtn" class="btn">Refresh</button>
+                            </div>
+                        </div>
+                        
+                        <div id="gamesList" class="game-list"></div>
+                        
+                        <div id="createGameForm" class="hidden">
+                            <h3>Create New Game</h3>
+                            <div class="form-group">
+                                <label>Game Mode:</label>
+                                <select id="gameModeSelect" class="input">
+                                    <option value="multiplayer" selected>Multiplayer Online</option>
+                                    <option value="singleplayer">Single Player Mode</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="roomNameGroup">
+                                <label>Room Name:</label>
+                                <input type="text" id="roomNameInput" class="input" placeholder="Enter room name" maxlength="30">
+                            </div>
+                            <div class="form-group">
+                                <label id="playersLabel">Max Players:</label>
+                                <select id="maxPlayersSelect" class="input">
+                                    <option value="2">2 Players</option>
+                                    <option value="3">3 Players</option>
+                                    <option value="4" selected>4 Players</option>
+                                </select>
+                            </div>
+                            <div class="form-buttons">
+                                <button id="confirmCreateBtn" class="btn">Create Room</button>
+                                <button id="cancelCreateBtn" class="btn">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="loadingSection" class="loading hidden">
+                    <p>Connecting to server...</p>
+                </div>
+                
+                <div id="errorSection" class="error hidden"></div>
+            </div>
+        </div>
+        
+        <div id="roomLobby" class="menu-screen hidden">
+            <div class="menu-card">
+                <div class="room-header">
+                    <h3 id="roomTitle">Room: Loading...</h3>
+                    <div id="roomInfo">Players: 0/4</div>
+                </div>
+                
+                <div id="roomPlayersList" class="room-players-list"></div>
+                
+                <div class="room-controls">
+                    <button id="readyBtn" class="btn">Ready</button>
+                    <button id="startGameBtn" class="btn hidden" disabled>Start Game</button>
+                    <button id="leaveRoomBtn" class="btn">Leave Room</button>
+                </div>
+                
+                <div id="roomMessages" class="room-messages"></div>
+            </div>
+        </div>
+        
+        <div id="gameScreen" class="game-container hidden">
+            <div class="sidebar">
+                <div id="phaseIndicator" class="phase-indicator">
+                    Production Phase - Turn 1
+                </div>
+                
+                <div id="playersList"></div>
+                
+                <div class="game-controls">
+                    <button id="endPhaseBtn" class="btn">End Phase</button>
+                    <button id="leaveGameBtn" class="btn">Leave Game</button>
+                </div>
+                
+                <div id="selectedTransporter" class="hidden">
+                    <h4>Selected Transporter</h4>
+                    <div id="transporterInfo"></div>
+                    <div id="transporterCargo"></div>
+                </div>
+                
+                <div id="actionButtons" class="hidden">
+                    <button id="moveBtn" class="btn">Move</button>
+                    <button id="loadBtn" class="btn">Load</button>
+                    <button id="unloadBtn" class="btn">Unload</button>
+                </div>
+            </div>
+            
+            <div class="game-board-container">
+                <svg id="gameBoard"></svg>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
