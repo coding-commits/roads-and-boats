@@ -80,9 +80,9 @@ Secondary producers only generate resources if the required inputs are present o
 ## Victory Points
 
 Resources have different victory point values:
-- **Gold**: 1 point per unit
-- **Coins**: 2 points per unit  
-- **Stock Certificates**: 3 points per unit
+- **Gold**: 10 points per unit
+- **Coins**: 40 points per unit  
+- **Stock Certificates**: 120 points per unit
 
 ## Production Rules
 
