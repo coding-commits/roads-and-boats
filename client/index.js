@@ -89,11 +89,13 @@ class RoadsAndBoatsApp {
     this.gameClient.on('game_created', (data) => {
       console.log('Game created:', data.gameId);
       this.uiManager.showRoomLobby(data.game);
+      this.uiManager.updateGameModeText(this.gameClient.isSinglePlayer ? 'singleplayer' : 'multiplayer');
     });
 
     this.gameClient.on('joined_game', (data) => {
       console.log('Joined game:', data.gameId);
       this.uiManager.showRoomLobby(data.game);
+      this.uiManager.updateGameModeText(this.gameClient.isSinglePlayer ? 'singleplayer' : 'multiplayer');
     });
 
     this.gameClient.on('game_started', (data) => {
@@ -102,6 +104,7 @@ class RoadsAndBoatsApp {
       this.uiManager.updateGameState(data.game);
       this.uiManager.showGameScreen();
       this.uiManager.showMessage('Game started!', 'success');
+      this.uiManager.updateGameModeText(this.gameClient.isSinglePlayer ? 'singleplayer' : 'multiplayer');
     });
 
     this.gameClient.on('phase_changed', (data) => {
@@ -217,12 +220,16 @@ class RoadsAndBoatsApp {
       roomNameGroup.style.display = 'none';
       if (playersGroup) playersGroup.style.display = 'none';
       confirmCreateBtn.textContent = 'Start Single Player';
+      this.uiManager.updateGameModeText('singleplayer');
     } else {
       roomNameGroup.style.display = 'block';
       if (playersGroup) playersGroup.style.display = 'block';
       confirmCreateBtn.textContent = 'Create Room';
+      this.uiManager.updateGameModeText('multiplayer');
     }
   }
+
+
 
   startSinglePlayerGame() {
     // Create a local single player game

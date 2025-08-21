@@ -15,6 +15,9 @@ export class UIManager {
     this.hideAll();
     document.getElementById('menuScreen').classList.remove('hidden');
     
+    // Reset game mode text to default (show nothing)
+    this.updateGameModeText('none');
+    
     // Check if gameMenu is visible and start auto-refresh if needed
     const gameMenu = document.getElementById('gameMenu');
     if (gameMenu && !gameMenu.classList.contains('hidden')) {
@@ -92,6 +95,22 @@ export class UIManager {
     
     // Stop auto-refresh when hiding all screens
     this.stopAutoRefresh();
+  }
+
+  updateGameModeText(mode) {
+    const gameModeText = document.getElementById('gameModeText');
+    if (gameModeText) {
+      if (mode === 'multiplayer') {
+        gameModeText.textContent = 'Online Multiplayer Board Game';
+        gameModeText.style.display = 'block';
+      } else if (mode === 'singleplayer') {
+        gameModeText.textContent = 'Single Player Game';
+        gameModeText.style.display = 'block';
+      } else {
+        // Default case: show nothing
+        gameModeText.style.display = 'none';
+      }
+    }
   }
 
   displayGamesList(games) {

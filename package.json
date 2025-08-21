@@ -1,7 +1,7 @@
 {
   "name": "roads-and-boats",
   "version": "1.0.0",
-  "description": "Online multiplayer implementation of Roads and Boats board game",
+  "description": "Roads and Boats board game",
   "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
