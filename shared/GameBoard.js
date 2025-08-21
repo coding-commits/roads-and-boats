@@ -42,7 +42,7 @@ export class GameBoard {
     if (noise > 0.5) return TERRAIN_TYPES.MOUNTAIN;
     if (noise > 0.2) return TERRAIN_TYPES.FOREST;
     if (noise > -0.2) return TERRAIN_TYPES.GRASSLAND;
-    if (noise > -0.5) return TERRAIN_TYPES.PASTURE;
+    if (noise > -0.5) return TERRAIN_TYPES.ROCK;
     return TERRAIN_TYPES.DESERT;
   }
 
@@ -154,6 +154,19 @@ export class GameBoard {
     }
     
     return validMoves;
+  }
+
+  findLandHexes() {
+    const landHexes = [];
+    const landTerrains = ['forest', 'mountain', 'grassland', 'rock', 'desert'];
+    
+    for (const [hexKey, hexData] of this.hexes) {
+      if (landTerrains.includes(hexData.terrain)) {
+        landHexes.push(hexData.coordinate);
+      }
+    }
+    
+    return landHexes;
   }
 
   toJSON() {

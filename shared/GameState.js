@@ -2,6 +2,7 @@ import { GameBoard } from './GameBoard.js';
 import { Player } from './Player.js';
 import { GAME_PHASES } from './gameTypes.js';
 import { HexCoordinate } from './hexUtils.js';
+import { Resource } from './Resource.js';
 
 export class GameState {
   constructor(gameId, maxPlayers = 4, roomName = '') {
@@ -99,19 +100,75 @@ export class GameState {
 
   initializePlayerPositions() {
     const players = this.getAllPlayers();
-    const startingPositions = [
+    
+    // Find suitable land hexes for starting positions
+    const landHexes = this.board.findLandHexes();
+    const startingPositions = this.selectStartingPositions(landHexes, players.length);
+    
+    players.forEach((player, index) => {
+      const startPos = startingPositions[index];
+      
+      // Position transporters at starting location
+      player.transporters.forEach(transporter => {
+        transporter.position = startPos;
+      });
+      
+      // Place starting resources on the home hex
+      this.placeStartingResources(player, startPos);
+    });
+  }
+  
+  selectStartingPositions(landHexes, playerCount) {
+    // Fallback positions if board doesn't have suitable hexes
+    const fallbackPositions = [
       new HexCoordinate(2, 2),
       new HexCoordinate(17, 2),
       new HexCoordinate(2, 17),
       new HexCoordinate(17, 17)
     ];
     
-    players.forEach((player, index) => {
-      const startPos = startingPositions[index];
-      player.transporters.forEach(transporter => {
-        transporter.position = startPos;
-      });
-    });
+    if (!landHexes || landHexes.length < playerCount) {
+      console.warn('Not enough land hexes found, using fallback positions');
+      return fallbackPositions.slice(0, playerCount);
+    }
+    
+    // Select well-spaced starting positions from land hexes
+    const selectedPositions = [];
+    const minDistance = 5; // Minimum distance between players
+    
+    for (let i = 0; i < playerCount && selectedPositions.length < playerCount; i++) {
+      const candidate = landHexes[i * Math.floor(landHexes.length / playerCount)];
+      
+      // Check if candidate is far enough from existing positions
+      const tooClose = selectedPositions.some(pos => 
+        Math.abs(candidate.q - pos.q) + Math.abs(candidate.r - pos.r) < minDistance
+      );
+      
+      if (!tooClose) {
+        selectedPositions.push(candidate);
+      } else if (selectedPositions.length < fallbackPositions.length) {
+        selectedPositions.push(fallbackPositions[selectedPositions.length]);
+      }
+    }
+    
+    return selectedPositions.length >= playerCount ? selectedPositions : fallbackPositions.slice(0, playerCount);
+  }
+  
+  placeStartingResources(player, homeHex) {
+    const hex = this.board.getHex(homeHex);
+    if (hex) {
+      // Initialize resources array if it doesn't exist
+      hex.resources = hex.resources || [];
+      
+      // Add starting resources to the home hex
+      hex.resources.push(Resource.wood(3));   // 3 wood
+      hex.resources.push(Resource.stone(2));  // 2 bricks (stone)
+      
+      console.log(`Placed starting resources on hex (${homeHex.q}, ${homeHex.r}) for player ${player.name}`);
+      // Note: 2 geese and 3 mules are properties of the player, not hex resources
+    } else {
+      console.error(`Could not find home hex (${homeHex.q}, ${homeHex.r}) for player ${player.name}`);
+    }
   }
 
   nextPhase() {

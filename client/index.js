@@ -280,6 +280,44 @@ class RoadsAndBoatsApp {
       this.uiManager.selectTransporter(transporter);
     }
   }
+
+  highlightUnit(transporterId, q, r) {
+    // Clear any existing highlights
+    this.clearUnitHighlights();
+    
+    // Find and highlight the transporter on the map
+    const transporters = document.querySelectorAll('.transporter');
+    transporters.forEach(transporterElement => {
+      // Check if this transporter matches the clicked unit
+      const transform = transporterElement.getAttribute('transform');
+      if (transform) {
+        const matches = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        if (matches) {
+          const elementPos = this.gameRenderer.pixelToHex(parseFloat(matches[1]) - 400, parseFloat(matches[2]) - 300);
+          if (Math.abs(elementPos.q - q) < 0.1 && Math.abs(elementPos.r - r) < 0.1) {
+            transporterElement.classList.add('unit-highlighted');
+            transporterElement.setAttribute('stroke', '#FF0000');
+            transporterElement.setAttribute('stroke-width', '3');
+            
+            // Center the map on this unit
+            this.gameRenderer.centerOn(q, r);
+          }
+        }
+      }
+    });
+    
+    // Clear highlight after 3 seconds
+    setTimeout(() => this.clearUnitHighlights(), 3000);
+  }
+
+  clearUnitHighlights() {
+    const highlighted = document.querySelectorAll('.unit-highlighted');
+    highlighted.forEach(element => {
+      element.classList.remove('unit-highlighted');
+      element.removeAttribute('stroke');
+      element.removeAttribute('stroke-width');
+    });
+  }
 }
 
 window.app = new RoadsAndBoatsApp();

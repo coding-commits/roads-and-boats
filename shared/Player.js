@@ -21,9 +21,11 @@ export class Player {
   }
 
   initializeStartingResources() {
-    // In Roads and Boats, players start with NO resources
-    // Resources must be produced through buildings during gameplay
-    // Players only start with transporters (donkeys) and geese
+    // Starting resources are placed on the home hex, not carried by player
+    // Player starts with:
+    // - 2 geese (already set in constructor: this.geese = 2)
+    // - 3 mules/donkeys (created in initializeStartingTransporters())
+    // - Resources (3 wood, 2 bricks) are placed on home hex by GameState
   }
 
   initializeStartingTransporters() {

@@ -25,6 +25,12 @@ export class UIManager {
   showGameScreen() {
     this.hideAll();
     document.getElementById('gameScreen').classList.remove('hidden');
+    
+    // Show zoom controls when game screen is visible
+    const zoomControls = document.getElementById('zoomControls');
+    if (zoomControls) {
+      zoomControls.style.display = 'flex';
+    }
   }
 
   showGameMenu() {
@@ -71,12 +77,18 @@ export class UIManager {
     const menuScreen = document.getElementById('menuScreen');
     const gameScreen = document.getElementById('gameScreen');
     const roomLobby = document.getElementById('roomLobby');
+    const zoomControls = document.getElementById('zoomControls');
     
     console.log('Elements found:', { menuScreen: !!menuScreen, gameScreen: !!gameScreen, roomLobby: !!roomLobby });
     
     if (menuScreen) menuScreen.classList.add('hidden');
     if (gameScreen) gameScreen.classList.add('hidden');
     if (roomLobby) roomLobby.classList.add('hidden');
+    
+    // Hide zoom controls when not in game screen
+    if (zoomControls) {
+      zoomControls.style.display = 'none';
+    }
     
     // Stop auto-refresh when hiding all screens
     this.stopAutoRefresh();
@@ -345,9 +357,12 @@ export class UIManager {
           ${player.name}
           ${player.isReady ? '✓' : ''}
         </div>
-        <div class="player-score">Score: ${player.score}</div>
+        <div class="player-score">Score: ${player.score} | Geese: ${player.geese || 0}</div>
         <div class="resource-list">
           ${this.formatPlayerResources(player)}
+        </div>
+        <div class="units-list">
+          ${this.formatPlayerUnits(player)}
         </div>
       `;
       
@@ -486,6 +501,45 @@ export class UIManager {
     setTimeout(() => {
       this.clearMessage();
     }, 5000);
+  }
+
+  formatPlayerUnits(player) {
+    if (!player.transporters || player.transporters.length === 0) {
+      return '<div class="unit-item">No units</div>';
+    }
+
+    let unitsHtml = '<div class="units-header" style="font-weight: bold; margin-bottom: 5px; font-size: 11px;">Units:</div>';
+    
+    player.transporters.forEach((transporter, index) => {
+      const position = transporter.position ? `(${transporter.position.q},${transporter.position.r})` : 'Unknown';
+      const unitName = this.getTransporterDisplayName(transporter.type);
+      
+      unitsHtml += `
+        <div class="unit-item" 
+             style="cursor: pointer; padding: 2px 0; font-size: 10px; border-radius: 3px; margin-bottom: 2px;" 
+             data-transporter-id="${transporter.id}"
+             data-position="${position}"
+             onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+             onmouseout="this.style.background='transparent'"
+             onclick="window.app.highlightUnit('${transporter.id}', ${transporter.position ? transporter.position.q : 0}, ${transporter.position ? transporter.position.r : 0})">
+          <span style="color: ${player.color};">●</span> ${unitName} @ ${position}
+        </div>
+      `;
+    });
+    
+    return unitsHtml;
+  }
+
+  getTransporterDisplayName(type) {
+    const displayNames = {
+      donkey: 'Donkey',
+      wagon: 'Wagon', 
+      truck: 'Truck',
+      raft: 'Raft',
+      rowboat: 'Rowboat',
+      steamer: 'Steamer'
+    };
+    return displayNames[type] || type;
   }
 
   showError(message) {

@@ -6,29 +6,28 @@ Roads and Boats is a logistics and resource conversion game where players build 
 ## Resource Types
 
 ### Primary Resources
-- **Wood** - Produced by Woodcutters from Forest hexes
-- **Stone** - Produced by Quarries from Mountain hexes  
-- **Clay** - Produced by Clay Pits from Grassland hexes
-- **Coal** - Produced by Coal Mines from Mountain hexes
-- **Iron** - Produced by Iron Mines from Mountain hexes
-- **Gold** - Produced by Gold Mines from Mountain hexes
-- **Oil** - Produced by Oil Rigs from Desert/Mountain hexes
+- **Trunk** - Produced by Woodcutters from Forest hexes (later converted to Boards via Sawmill)
+- **Stone** - Produced by Quarries from Rock hexes
+- **Clay** - Produced by Clay Pits from Shore/River Bank hexes
+- **Gold** - Produced by Mines from Mountain hexes (initially filled with 3 Gold, 3 Iron)
+- **Iron** - Produced by Mines from Mountain hexes (initially filled with 3 Gold, 3 Iron)
+- **Fuel** - Produced by Oil Rigs from Sea hexes (requires research)
 
 ### Processed Resources
-- **Boards** - Produced by Sawmills from Wood
-- **Fuel** - Produced by Coal Burners from Wood/Coal
-- **Paper** - Produced by Paper Mills from Boards
-- **Stone** - Produced by Stone Factories from Clay
-- **Coins** - Produced by Mints (from Fuel and Gold)
-- **Stock Certificates** - Produced by Stock Exchanges (from Paper and Coins)
+- **Boards** - Produced by Sawmills from Trunks (1 Trunk → 2 Boards, Max 6)
+- **Fuel** - Produced by Coal Burners from Trunks/Boards (2 Trunk/Board → 1 Fuel, Max 6)
+- **Paper** - Produced by Paper Mills from Trunks/Boards (2 Trunk/Board → 1 Paper, Max 1)
+- **Stone** - Produced by Stone Factories from Clay (1 Clay → 2 Stone, Max 6)
+- **Coins** - Produced by Mints from Fuel and Gold (1 Fuel + 2 Gold → 1 Coin, Max 1)
+- **Stock Certificates** - Produced by Stock Exchanges from Paper and Coins (1 Paper + 2 Coins → 1 Share, Max 6)
 
 ### Transportation Units
-- **Wagons** - Produced by Wagon Factories (from Donkey and Boards)
-- **Trucks** - Produced by Truck Factories (from Fuel and Iron)
-- **Rafts** - Produced by Raft Factories (from Wood)
-- **Rowboats** - Produced by Rowboat Factories (from Boards)
-- **Steamers** - Produced by Steamer Factories (from Fuel and Iron)
-- **Airplanes** - Produced by Airports (from Boards and Geese)
+- **Wagons** - Produced by Wagon Factories (1 Donkey + 2 Boards → 1 Wagon, Max 1)
+- **Trucks** - Produced by Truck Factories (1 Fuel + 1 Iron → 1 Truck, Max 1, requires research)
+- **Rafts** - Produced by Raft Factories (2 Trunks → 1 Raft, Max 1)
+- **Rowboats** - Produced by Rowboat Factories (5 Boards → 1 Rowboat, Max 1, requires research)
+- **Steamers** - Produced by Steamer Factories (2 Fuel + 1 Iron → 1 Steamer, Max 1, requires research)
+- **Airplanes** - Produced by Airports (2 Boards + 1 Goose → 1 Airplane, Max 1)
 
 ### Special Resources
 - **Geese** - Used for research and technology advancement (each player starts with 2 geese)
@@ -40,28 +39,33 @@ Primary producers automatically generate resources each Production phase without
 
 | Building | Input Required | Output | Terrain Required |
 |----------|---------------|---------|------------------|
-| Woodcutter | None | 1 Wood | Forest |
-| Quarry | None | 1 Stone | Mountain |
-| Clay Pit | None | 1 Clay | Grassland |
-| Coal Mine | None | 1 Coal | Mountain |
-| Iron Mine | None | 1 Iron | Mountain |
+| Woodcutter | None | 1 Trunk | Forest |
+| Quarry | None | 1 Stone | Rock |
+| Clay Pit | None | 1 Clay | Shore/River Bank |
+| Mine | None | 1 Gold or 1 Iron | Mountain |
+| Oil Rig | None | 1 Coal | Sea |
 
 ### Secondary Producers
 Secondary producers only generate resources if the required inputs are present on their hex at the start of the Production phase:
 
-| Building | Input Required | Output | Notes |
-|----------|---------------|---------|-------|
-| Paper Mill | 2 Wood | 1 Paper | Converts wood to paper |
-| Gold Mine | None | 1 Gold | Produces gold from mountain terrain |
-| Mint | 1 Gold | 1 Coins | Converts gold to currency |
-| Stock Exchange | 2 Coins | 1 Stock Certificate | High-value conversion |
+| Building | Input Required | Output | Max Output |
+|----------|---------------|---------|------------|
+| Sawmill | 1 Trunk | 2 Boards | 6 |
+| Coal Burner | 2 Trunk/Board | 1 Fuel | 6 |
+| Paper Mill | 2 Trunk/Board | 1 Paper | 1 |
+| Stone Factory | 1 Clay | 2 Stone | 6 |
+| Mint | 1 Fuel + 2 Gold | 1 Coin | 1 |
+| Stock Exchange | 1 Paper + 2 Coins | 1 Share | 6 |
 
 ## Resource Conversion Formulas
 
 ### Basic Conversions
-- **2 Wood → 1 Paper** (Paper Mill)
-- **1 Gold → 1 Coins** (Mint)
-- **2 Coins → 1 Stock Certificate** (Stock Exchange)
+- **1 Trunk → 2 Boards** (Sawmill)
+- **2 Trunk/Board → 1 Fuel** (Coal Burner)
+- **2 Trunk/Board → 1 Paper** (Paper Mill)
+- **1 Clay → 2 Stone** (Stone Factory)
+- **1 Fuel + 2 Gold → 1 Coin** (Mint)
+- **1 Paper + 2 Coins → 1 Stock Certificate** (Stock Exchange)
 
 ### Research and Technology
 - **Research**: 2 Geese + 1 Paper → Technology advancement
@@ -149,59 +153,24 @@ Single Player Mode allows one player to play solo. This mode is ideal for learni
   - 2 Stone  
   - 3 Donkeys
   - 2 Geese
-- The player starts at a designated starting position on the board
-- No other players or AI opponents are present
 
 ### Gameplay Rules
 
 #### Turn Structure
-The player follows the standard 4-phase turn structure:
-  1. **Production Phase** - All buildings on the board produce simultaneously
-  2. **Movement Phase** - Move your transporters and resources
-  3. **Building Phase** - Build structures, roads, or new transporters
-  4. **Wonder Phase** - Wonder blocks are removed based on high-value resource production
+- The player follows 3-phase structure:
+  1. **Production Phase** - All buildings produce simultaneously
+  2. **Movement Phase** - Current virtual player moves their transporters
+  3. **Building Phase** - Current virtual player can build structures/roads
 
-#### Movement and Actions
-- You control only your own transporters (donkeys, wagons, boats, etc.)
-- You can use any building on the board if you can get the required inputs there
-- Resources belong to the hex where they're located, not to you personally
-- You must transport resources with your own vehicles to move them between hexes
-
-#### Solo Strategy Considerations
-- **Efficient Routes**: Plan transportation networks to minimize movement costs
-- **Building Placement**: Strategically place buildings to create efficient production chains  
-- **Resource Management**: Balance immediate needs with long-term conversion goals
-- **Research Timing**: Use your geese wisely for technology advancement
-- **Infrastructure Investment**: Build roads and bridges to improve transportation efficiency
+#### Strategy Considerations
+- **Resource Sharing**: Plan efficient supply chains between your virtual players
+- **Infrastructure Investment**: Build roads and buildings that benefit multiple virtual players
+- **Research Timing**: Coordinate technology research across virtual players
+- **Transportation Networks**: Create interconnected logistics systems
 
 #### Winning Condition
-- The game ends when all 193 Wonder blocks are removed
-- **Goal**: Maximize your final score through efficient resource conversion
-- **Scoring**: Gold (1 point), Coins (2 points), Stock Certificates (3 points)
-
-### Single Player Scoring Variants
-
-#### Score Attack
-- Try to achieve the highest possible final score
-- Track your personal best scores over multiple games
-- Focus on optimal resource conversion and efficiency
-
-#### Speed Challenge
-- Try to reach a target score as quickly as possible
-- Set goals like "reach 20 points in 10 turns"
-- Balance speed with efficiency
-
-#### Efficiency Challenge
-- Set specific resource conversion goals:
-  - Produce 10+ stock certificates
-  - Accumulate 50+ total points
-  - Build a complete production chain from wood to stock certificates
-  - Research all available technologies
-
-#### Wonder Race
-- Try to achieve your target score before the Wonder countdown ends
-- Balance point accumulation with Wonder block removal rate
-- Practice timing your high-value production
+- The game ends in a fixed number of turns
+- **Winning condition**: The player shall score certain points (the goal is different for difficulty levels)
 
 ### Benefits of Single Player Mode
 - **Learn the Game**: Practice complex logistics without time pressure
@@ -218,27 +187,8 @@ This implementation currently uses a procedural map generation system that creat
 Research conducted on 2025-08-21 identified several authoritative sources for Roads & Boats scenario maps:
 
 #### Primary Sources
-- **BoardGameGeek Files Section**: [https://boardgamegeek.com/boardgame/875/roads-and-boats/files](https://boardgamegeek.com/boardgame/875/roads-and-boats/files)
-  - Community-contributed scenario maps and layouts
-  - 3-4 Player Scenario Booklets available for download
-  - Requires BGG account for access
-
-- **Splotter Spellen Official Content**: [http://www.splotter.nl/english/r_b/basic.html](http://www.splotter.nl/english/r_b/basic.html)
-  - Original publisher's official scenarios from the base game
-  - &Cetera expansion includes 24 additional scenarios
-  - Material supports 2-6 players depending on scenario
-
-#### Recent Publications
-- **Roads & Boats Book of Scenarios Volume 1** (2024): [https://neoncometgames.com/product/roads-boats-book-of-scenarios-volume-1/](https://neoncometgames.com/product/roads-boats-book-of-scenarios-volume-1/)
-  - Comprehensive collection of 161 full-color scenarios
-  - Contributions from over a dozen designers spanning 25 years
-  - Organized by player count with original artwork styling
-  - Published by Neon Comet Games, unveiled at Splotter Con 2024
-
-#### Community Resources
-- **BoardGameGeek Scenario Discussion**: Geeklist ID 341324 contains community discussion and sharing of custom scenarios
-- **Tabletop Simulator**: Steam Workshop has digital implementations with scenario maps
-- **&Cetera Expansion**: Adds Polder and City terrain types plus scenarios for 5-6 players
+- @resources/rules/PBEM_rule.md. exclude rail way for now.
+- @resources/rules/RB3Erule.pdf: rules with images
 
 ### Map Construction System
 The official game uses modular hexagonal terrain tiles that players arrange according to scenario instructions. Key components include:

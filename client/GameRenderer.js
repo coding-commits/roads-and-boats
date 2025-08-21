@@ -10,6 +10,15 @@ export class GameRenderer {
     this.eventHandlers = new Map();
     this.tooltip = null;
     
+    // Zoom and pan constraints
+    this.maxZoom = 3.0;
+    this.currentZoom = 1.0;
+    this.initialViewBox = { ...this.viewBox };
+    this.mapBounds = { width: 20 * this.hexSpacing, height: 20 * this.hexSpacing };
+    
+    // Set minimum zoom to 100% (1.0)
+    this.minZoom = 1.0;
+    
     // Optimized texture parameters
     this.debugOffsets = {
       x: -30,
@@ -19,11 +28,18 @@ export class GameRenderer {
       imageScale: 1.9
     };
     
+    // Map positioning offset
+    this.mapOffset = {
+      x: 0,
+      y: 0
+    };
+    
     this.initializeSVG();
     this.setupEventListeners();
     this.setupTerrainPatterns();
     this.setupTooltip();
     this.setupDebugTool();
+    this.setupDebugToggle();
   }
 
   initializeSVG() {
@@ -46,7 +62,7 @@ export class GameRenderer {
       mountain: '/resources/tiles/terrainsHex/mountainTile.png',
       water: '/resources/tiles/terrainsHex/seaTile.png',
       desert: '/resources/tiles/terrainsHex/desertTile.png',
-      pasture: '/resources/tiles/terrainsHex/pastureTile.png'
+      rock: '/resources/tiles/terrainsHex/rockTile.png'
     };
 
     Object.entries(terrainTextures).forEach(([terrainType, imagePath]) => {
@@ -143,7 +159,8 @@ export class GameRenderer {
         this.viewBox.x += deltaX;
         this.viewBox.y += deltaY;
         
-        this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
+        this.constrainPan();
+        this.updateViewBox();
         
         lastX = e.clientX;
         lastY = e.clientY;
@@ -157,18 +174,11 @@ export class GameRenderer {
 
     this.svg.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const scaleFactor = e.deltaY > 0 ? 1.1 : 0.9;
-      const centerX = this.viewBox.x + this.viewBox.width / 2;
-      const centerY = this.viewBox.y + this.viewBox.height / 2;
-      
-      this.viewBox.width *= scaleFactor;
-      this.viewBox.height *= scaleFactor;
-      
-      this.viewBox.x = centerX - this.viewBox.width / 2;
-      this.viewBox.y = centerY - this.viewBox.height / 2;
-      
-      this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
+      const zoomDirection = e.deltaY > 0 ? -0.1 : 0.1;
+      this.changeZoom(zoomDirection);
     });
+    
+    this.setupZoomControls();
   }
 
   setGame(game) {
@@ -447,7 +457,138 @@ export class GameRenderer {
   hexToPixel(hex) {
     const x = this.hexSize * (3/2 * hex.q);
     const y = this.hexSize * (Math.sqrt(3)/2 * hex.q + Math.sqrt(3) * hex.r);
-    return { x: x + 400, y: y + 300 };
+    return { x: x + 400 + this.mapOffset.x, y: y + 300 + this.mapOffset.y };
+  }
+
+  pixelToHex(x, y) {
+    // Convert pixel coordinates back to hex coordinates
+    const adjustedX = x - 400 - this.mapOffset.x;
+    const adjustedY = y - 300 - this.mapOffset.y;
+    
+    const q = (2/3 * adjustedX) / this.hexSize;
+    const r = (-1/3 * adjustedX + Math.sqrt(3)/3 * adjustedY) / this.hexSize;
+    
+    return { q, r };
+  }
+
+  centerOn(q, r) {
+    // Center the viewport on the given hex coordinates
+    const { x, y } = this.hexToPixel({ q, r });
+    
+    this.viewBox.x = x - this.viewBox.width / 2;
+    this.viewBox.y = y - this.viewBox.height / 2;
+    
+    this.constrainPan();
+    this.updateViewBox();
+  }
+
+  setupZoomControls() {
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const zoomLevel = document.getElementById('zoomLevel');
+    
+    if (!zoomSlider || !zoomInBtn || !zoomOutBtn || !zoomLevel) return;
+    
+    // Set slider range based on zoom constraints
+    zoomSlider.min = this.minZoom;
+    zoomSlider.max = this.maxZoom;
+    zoomSlider.value = this.currentZoom;
+    zoomLevel.textContent = Math.round(this.currentZoom * 100) + '%';
+    
+    // Slider change handler
+    zoomSlider.addEventListener('input', (e) => {
+      this.setZoom(parseFloat(e.target.value));
+    });
+    
+    // Button handlers
+    zoomInBtn.addEventListener('click', () => {
+      this.changeZoom(0.1);
+    });
+    
+    zoomOutBtn.addEventListener('click', () => {
+      this.changeZoom(-0.1);
+    });
+  }
+  
+  setZoom(newZoom) {
+    // Constrain zoom level
+    newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, newZoom));
+    
+    if (newZoom === this.currentZoom) return;
+    
+    const centerX = this.viewBox.x + this.viewBox.width / 2;
+    const centerY = this.viewBox.y + this.viewBox.height / 2;
+    
+    // Calculate new viewBox dimensions based on zoom
+    const baseWidth = this.initialViewBox.width;
+    const baseHeight = this.initialViewBox.height;
+    
+    this.viewBox.width = baseWidth / newZoom;
+    this.viewBox.height = baseHeight / newZoom;
+    
+    // Recenter on the same point
+    this.viewBox.x = centerX - this.viewBox.width / 2;
+    this.viewBox.y = centerY - this.viewBox.height / 2;
+    
+    this.currentZoom = newZoom;
+    this.constrainPan();
+    this.updateViewBox();
+    this.updateZoomControls();
+  }
+  
+  changeZoom(delta) {
+    this.setZoom(this.currentZoom + delta);
+  }
+  
+  constrainPan() {
+    // Calculate map boundaries - how far we can pan based on current zoom
+    const mapRadius = Math.max(this.mapBounds.width, this.mapBounds.height) / 2;
+    const viewRadius = Math.max(this.viewBox.width, this.viewBox.height) / 2;
+    
+    // Allow panning up to map radius, but not beyond
+    const maxPanDistance = mapRadius;
+    
+    // Calculate center of current view
+    const centerX = this.viewBox.x + this.viewBox.width / 2;
+    const centerY = this.viewBox.y + this.viewBox.height / 2;
+    
+    // Calculate distance from map center (0,0 is map center)
+    const mapCenterX = this.mapBounds.width / 2;
+    const mapCenterY = this.mapBounds.height / 2;
+    
+    const distanceFromCenter = Math.sqrt(
+      Math.pow(centerX - mapCenterX, 2) + 
+      Math.pow(centerY - mapCenterY, 2)
+    );
+    
+    // If we're beyond the allowed distance, constrain
+    if (distanceFromCenter > maxPanDistance) {
+      const angle = Math.atan2(centerY - mapCenterY, centerX - mapCenterX);
+      const constrainedCenterX = mapCenterX + Math.cos(angle) * maxPanDistance;
+      const constrainedCenterY = mapCenterY + Math.sin(angle) * maxPanDistance;
+      
+      this.viewBox.x = constrainedCenterX - this.viewBox.width / 2;
+      this.viewBox.y = constrainedCenterY - this.viewBox.height / 2;
+    }
+  }
+  
+  updateViewBox() {
+    this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
+  }
+  
+  updateZoomControls() {
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomLevel = document.getElementById('zoomLevel');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    
+    if (zoomSlider) zoomSlider.value = this.currentZoom;
+    if (zoomLevel) zoomLevel.textContent = Math.round(this.currentZoom * 100) + '%';
+    
+    // Disable buttons at limits
+    if (zoomInBtn) zoomInBtn.disabled = this.currentZoom >= this.maxZoom;
+    if (zoomOutBtn) zoomOutBtn.disabled = this.currentZoom <= this.minZoom;
   }
 
   parseCoordinate(coordStr) {
@@ -463,11 +604,11 @@ export class GameRenderer {
   getTerrainColor(terrain) {
     const colors = {
       grassland: '#90EE90',
-      forest: '#228B22',
+      forest: '#228B22', 
       mountain: '#A0522D',
       water: '#4682B4',
       desert: '#F4A460',
-      pasture: '#98FB98'
+      rock: '#696969'
     };
     return colors[terrain] || '#DDD';
   }
@@ -504,11 +645,17 @@ export class GameRenderer {
         resources: 'Oil (with Oil Rig)',
         color: '#F4A460'
       },
-      pasture: {
-        name: 'Pasture',
-        description: 'Grazing land. Good for certain types of production.',
-        resources: 'Various pastoral resources',
-        color: '#98FB98'
+      rock: {
+        name: 'Rock/Stone Plain',
+        description: 'Rocky terrain suitable for quarries. Source of building stone.',
+        resources: 'Stone (with Quarry)',
+        color: '#696969'
+      },
+      stone_plain: {
+        name: 'Stone Plain',
+        description: 'Rocky terrain suitable for quarries. Source of building stone.',
+        resources: 'Stone (with Quarry)',
+        color: '#696969'
       }
     };
     return terrainInfo[terrain] || { name: 'Unknown', description: 'Unknown terrain type', resources: 'None', color: '#DDD' };
@@ -631,8 +778,12 @@ export class GameRenderer {
       document.getElementById('patternHeightValue').textContent = this.debugOffsets.patternHeight;
       document.getElementById('imageScaleValue').textContent = this.debugOffsets.imageScale.toFixed(1);
       
+      // Update map offset values
+      document.getElementById('mapXOffsetValue').textContent = this.mapOffset.x;
+      document.getElementById('mapYOffsetValue').textContent = this.mapOffset.y;
+      
       // Update output display
-      const output = `x: ${this.debugOffsets.x}, y: ${this.debugOffsets.y}, width: ${this.debugOffsets.patternWidth}, height: ${this.debugOffsets.patternHeight}, scale: ${this.debugOffsets.imageScale}`;
+      const output = `Texture: x: ${this.debugOffsets.x}, y: ${this.debugOffsets.y}, width: ${this.debugOffsets.patternWidth}, height: ${this.debugOffsets.patternHeight}, scale: ${this.debugOffsets.imageScale} | Map: x: ${this.mapOffset.x}, y: ${this.mapOffset.y}`;
       document.getElementById('offsetOutput').textContent = output;
     };
     
@@ -718,5 +869,32 @@ export class GameRenderer {
     
     // Initialize display
     updateDisplayValues();
+  }
+
+  setupDebugToggle() {
+    // Add keyboard listener for debug toggle
+    document.addEventListener('keydown', (e) => {
+      // Toggle debug panel with 'D' key (case insensitive)
+      if (e.key.toLowerCase() === 'd' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Only toggle if we're not typing in an input field
+        const activeElement = document.activeElement;
+        if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+          this.toggleDebugPanel();
+        }
+      }
+    });
+  }
+
+  toggleDebugPanel() {
+    const debugPanel = document.getElementById('debugPanel');
+    const isVisible = debugPanel.style.display !== 'none';
+    
+    if (isVisible) {
+      debugPanel.style.display = 'none';
+      console.log('Debug panel hidden. Press "D" to show.');
+    } else {
+      debugPanel.style.display = 'block';
+      console.log('Debug panel shown. Press "D" to hide.');
+    }
   }
 }

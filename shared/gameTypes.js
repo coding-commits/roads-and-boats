@@ -4,7 +4,7 @@ export const TERRAIN_TYPES = {
   MOUNTAIN: 'mountain',
   WATER: 'water',
   DESERT: 'desert',
-  PASTURE: 'pasture'
+  ROCK: 'rock'
 };
 
 export const RESOURCE_TYPES = {
