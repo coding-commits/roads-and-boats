@@ -21,9 +21,9 @@ export class Player {
   }
 
   initializeStartingResources() {
-    // Starting resources based on Roads and Boats rules
-    this.resources.add(Resource.wood(3));   // 3 wood (boards)
-    this.resources.add(Resource.stone(2));  // 2 stone
+    // In Roads and Boats, players start with NO resources
+    // Resources must be produced through buildings during gameplay
+    // Players only start with transporters (donkeys) and geese
   }
 
   initializeStartingTransporters() {

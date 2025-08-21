@@ -23,9 +23,12 @@ export class GameRenderer {
   }
 
   setupTerrainPatterns() {
-    // Create a defs element for patterns
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    this.svg.appendChild(defs);
+    // Check if defs already exists, if not create it
+    let defs = this.svg.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      this.svg.insertBefore(defs, this.svg.firstChild);
+    }
 
     const terrainTextures = {
       grassland: '/resources/tiles/terrainsHex/pastureTile.png',
@@ -37,17 +40,46 @@ export class GameRenderer {
     };
 
     Object.entries(terrainTextures).forEach(([terrainType, imagePath]) => {
+      // Check if pattern already exists
+      const existingPattern = document.getElementById(`terrain-${terrainType}`);
+      if (existingPattern) {
+        return; // Skip if pattern already exists
+      }
+
+      console.log(`Creating pattern for ${terrainType} with image: ${imagePath}`);
+      
       const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
       pattern.setAttribute('id', `terrain-${terrainType}`);
       pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      pattern.setAttribute('width', this.hexSize * 2);
-      pattern.setAttribute('height', this.hexSize * 2);
+      pattern.setAttribute('width', this.hexSize * 2.2);
+      pattern.setAttribute('height', this.hexSize * 2.2);
+      pattern.setAttribute('x', '0');
+      pattern.setAttribute('y', '0');
 
       const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       image.setAttribute('href', imagePath);
-      image.setAttribute('width', this.hexSize * 2);
-      image.setAttribute('height', this.hexSize * 2);
+      image.setAttribute('width', this.hexSize * 2.2);
+      image.setAttribute('height', this.hexSize * 2.2);
+      image.setAttribute('x', '0');
+      image.setAttribute('y', '0');
       image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+
+      // Add error handling for images
+      image.addEventListener('error', (e) => {
+        console.error(`Failed to load terrain texture: ${imagePath}`, e);
+        // Create a colored rectangle as fallback
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('width', this.hexSize * 2.2);
+        rect.setAttribute('height', this.hexSize * 2.2);
+        rect.setAttribute('x', '0');
+        rect.setAttribute('y', '0');
+        rect.setAttribute('fill', this.getTerrainColor(terrainType));
+        pattern.appendChild(rect);
+      });
+
+      image.addEventListener('load', () => {
+        console.log(`Successfully loaded terrain texture: ${imagePath}`);
+      });
 
       pattern.appendChild(image);
       defs.appendChild(pattern);
@@ -84,8 +116,8 @@ export class GameRenderer {
 
     this.svg.addEventListener('mousemove', (e) => {
       if (isDragging) {
-        const deltaX = (lastX - e.clientX) * (this.viewBox.width / this.svg.clientWidth);
-        const deltaY = (lastY - e.clientY) * (this.viewBox.height / this.svg.clientHeight);
+        const deltaX = (lastX - e.clientX);
+        const deltaY = (lastY - e.clientY);
         
         this.viewBox.x += deltaX;
         this.viewBox.y += deltaY;
@@ -135,8 +167,14 @@ export class GameRenderer {
   }
 
   clearSVG() {
+    // Preserve defs element with patterns
+    const defs = this.svg.querySelector('defs');
     while (this.svg.firstChild) {
       this.svg.removeChild(this.svg.firstChild);
+    }
+    // Re-add defs if it existed
+    if (defs) {
+      this.svg.appendChild(defs);
     }
   }
 
@@ -160,8 +198,20 @@ export class GameRenderer {
     const { x, y } = this.hexToPixel(coordinate);
     const hexElement = this.createHexagon(x, y, this.hexSize);
     
-    // Use texture pattern instead of solid color
-    hexElement.setAttribute('fill', `url(#terrain-${terrain})`);
+    // Try to use texture pattern, fallback to solid color
+    const patternId = `terrain-${terrain}`;
+    const pattern = document.getElementById(patternId);
+    
+    if (pattern) {
+      hexElement.setAttribute('fill', `url(#${patternId})`);
+      // Add fallback in case pattern fails to render
+      hexElement.setAttribute('stroke', this.getTerrainColor(terrain));
+      hexElement.setAttribute('stroke-width', '1');
+    } else {
+      console.warn(`Pattern not found for ${terrain}, using fallback color`);
+      hexElement.setAttribute('fill', this.getTerrainColor(terrain));
+    }
+    
     hexElement.setAttribute('class', 'hex');
     hexElement.setAttribute('data-q', coordinate.q);
     hexElement.setAttribute('data-r', coordinate.r);

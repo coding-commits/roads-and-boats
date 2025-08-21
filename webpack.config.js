@@ -33,7 +33,16 @@ module.exports = {
     }),
   ],
   devServer: {
-    static: './dist',
+    static: [
+      {
+        directory: path.join(__dirname, 'dist'),
+        publicPath: '/',
+      },
+      {
+        directory: path.join(__dirname, 'resources'),
+        publicPath: '/resources/',
+      }
+    ],
     port: 3001,
     proxy: [
       {
