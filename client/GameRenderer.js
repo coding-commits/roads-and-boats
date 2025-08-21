@@ -10,10 +10,20 @@ export class GameRenderer {
     this.eventHandlers = new Map();
     this.tooltip = null;
     
+    // Optimized texture parameters
+    this.debugOffsets = {
+      x: -30,
+      y: -17,
+      patternWidth: 60,
+      patternHeight: 60,
+      imageScale: 1.9
+    };
+    
     this.initializeSVG();
     this.setupEventListeners();
     this.setupTerrainPatterns();
     this.setupTooltip();
+    this.setupDebugTool();
   }
 
   initializeSVG() {
@@ -51,34 +61,45 @@ export class GameRenderer {
       const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
       pattern.setAttribute('id', `terrain-${terrainType}`);
       pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      pattern.setAttribute('width', this.hexSize * 2);
-      pattern.setAttribute('height', this.hexSize * 2);
+      pattern.setAttribute('width', this.debugOffsets.patternWidth);
+      pattern.setAttribute('height', this.debugOffsets.patternHeight);
       pattern.setAttribute('x', '0');
       pattern.setAttribute('y', '0');
 
       const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       image.setAttribute('href', imagePath);
-      image.setAttribute('width', this.hexSize * 2);
-      image.setAttribute('height', this.hexSize * 2);
-      image.setAttribute('x', -this.hexSize);
-      image.setAttribute('y', -this.hexSize);
+      image.setAttribute('width', this.debugOffsets.patternWidth * this.debugOffsets.imageScale);
+      image.setAttribute('height', this.debugOffsets.patternHeight * this.debugOffsets.imageScale);
+      image.setAttribute('x', this.debugOffsets.x);
+      image.setAttribute('y', this.debugOffsets.y);
       image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 
+      let fallbackCreated = false;
+      
       // Add error handling for images
       image.addEventListener('error', (e) => {
         console.error(`Failed to load terrain texture: ${imagePath}`, e);
-        // Create a colored rectangle as fallback
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('width', this.hexSize * 2);
-        rect.setAttribute('height', this.hexSize * 2);
-        rect.setAttribute('x', -this.hexSize);
-        rect.setAttribute('y', -this.hexSize);
-        rect.setAttribute('fill', this.getTerrainColor(terrainType));
-        pattern.appendChild(rect);
+        if (!fallbackCreated) {
+          // Create a colored rectangle as fallback
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('width', this.debugOffsets.patternWidth);
+          rect.setAttribute('height', this.debugOffsets.patternHeight);
+          rect.setAttribute('x', this.debugOffsets.x);
+          rect.setAttribute('y', this.debugOffsets.y);
+          rect.setAttribute('fill', this.getTerrainColor(terrainType));
+          rect.setAttribute('id', `fallback-${terrainType}`);
+          pattern.appendChild(rect);
+          fallbackCreated = true;
+        }
       });
 
       image.addEventListener('load', () => {
         console.log(`Successfully loaded terrain texture: ${imagePath}`);
+        // Remove fallback if it exists and image loaded successfully
+        const fallback = document.getElementById(`fallback-${terrainType}`);
+        if (fallback) {
+          fallback.remove();
+        }
       });
 
       pattern.appendChild(image);
@@ -599,5 +620,103 @@ export class GameRenderer {
     if (handlers) {
       handlers.forEach(handler => handler(data));
     }
+  }
+
+  setupDebugTool() {
+    // Update display values
+    const updateDisplayValues = () => {
+      document.getElementById('xOffsetValue').textContent = this.debugOffsets.x;
+      document.getElementById('yOffsetValue').textContent = this.debugOffsets.y;
+      document.getElementById('patternWidthValue').textContent = this.debugOffsets.patternWidth;
+      document.getElementById('patternHeightValue').textContent = this.debugOffsets.patternHeight;
+      document.getElementById('imageScaleValue').textContent = this.debugOffsets.imageScale.toFixed(1);
+      
+      // Update output display
+      const output = `x: ${this.debugOffsets.x}, y: ${this.debugOffsets.y}, width: ${this.debugOffsets.patternWidth}, height: ${this.debugOffsets.patternHeight}, scale: ${this.debugOffsets.imageScale}`;
+      document.getElementById('offsetOutput').textContent = output;
+    };
+    
+    // Update patterns and re-render
+    const updatePatterns = () => {
+      // Remove old patterns
+      const defs = this.svg.querySelector('defs');
+      if (defs) {
+        defs.innerHTML = '';
+      }
+      
+      // Recreate patterns with new values
+      this.setupTerrainPatterns();
+      
+      // Re-render if game exists
+      if (this.game) {
+        this.render();
+      }
+    };
+    
+    // Setup event listeners for sliders
+    document.getElementById('xOffsetSlider').addEventListener('input', (e) => {
+      this.debugOffsets.x = parseInt(e.target.value);
+      updateDisplayValues();
+      updatePatterns();
+    });
+    
+    document.getElementById('yOffsetSlider').addEventListener('input', (e) => {
+      this.debugOffsets.y = parseInt(e.target.value);
+      updateDisplayValues();
+      updatePatterns();
+    });
+    
+    document.getElementById('patternWidthSlider').addEventListener('input', (e) => {
+      this.debugOffsets.patternWidth = parseInt(e.target.value);
+      updateDisplayValues();
+      updatePatterns();
+    });
+    
+    document.getElementById('patternHeightSlider').addEventListener('input', (e) => {
+      this.debugOffsets.patternHeight = parseInt(e.target.value);
+      updateDisplayValues();
+      updatePatterns();
+    });
+    
+    document.getElementById('imageScaleSlider').addEventListener('input', (e) => {
+      this.debugOffsets.imageScale = parseFloat(e.target.value);
+      updateDisplayValues();
+      updatePatterns();
+    });
+    
+    // Reset button
+    document.getElementById('resetOffsets').addEventListener('click', () => {
+      this.debugOffsets.x = -30;
+      this.debugOffsets.y = -17;
+      this.debugOffsets.patternWidth = 60;
+      this.debugOffsets.patternHeight = 60;
+      this.debugOffsets.imageScale = 1.9;
+      
+      // Update sliders
+      document.getElementById('xOffsetSlider').value = -30;
+      document.getElementById('yOffsetSlider').value = -17;
+      document.getElementById('patternWidthSlider').value = 60;
+      document.getElementById('patternHeightSlider').value = 60;
+      document.getElementById('imageScaleSlider').value = 1.9;
+      
+      updateDisplayValues();
+      updatePatterns();
+    });
+    
+    // Copy button
+    document.getElementById('copyOffsets').addEventListener('click', () => {
+      const values = `x: ${this.debugOffsets.x}, y: ${this.debugOffsets.y}, patternWidth: ${this.debugOffsets.patternWidth}, patternHeight: ${this.debugOffsets.patternHeight}, imageScale: ${this.debugOffsets.imageScale}`;
+      navigator.clipboard.writeText(values).then(() => {
+        const btn = document.getElementById('copyOffsets');
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 1000);
+      });
+    });
+    
+    // Initialize display
+    updateDisplayValues();
   }
 }
