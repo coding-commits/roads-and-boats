@@ -51,17 +51,17 @@ export class GameRenderer {
       const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
       pattern.setAttribute('id', `terrain-${terrainType}`);
       pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      pattern.setAttribute('width', this.hexSize * 2.2);
-      pattern.setAttribute('height', this.hexSize * 2.2);
+      pattern.setAttribute('width', this.hexSize * 2);
+      pattern.setAttribute('height', this.hexSize * 2);
       pattern.setAttribute('x', '0');
       pattern.setAttribute('y', '0');
 
       const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       image.setAttribute('href', imagePath);
-      image.setAttribute('width', this.hexSize * 2.2);
-      image.setAttribute('height', this.hexSize * 2.2);
-      image.setAttribute('x', '0');
-      image.setAttribute('y', '0');
+      image.setAttribute('width', this.hexSize * 2);
+      image.setAttribute('height', this.hexSize * 2);
+      image.setAttribute('x', -this.hexSize);
+      image.setAttribute('y', -this.hexSize);
       image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 
       // Add error handling for images
@@ -69,10 +69,10 @@ export class GameRenderer {
         console.error(`Failed to load terrain texture: ${imagePath}`, e);
         // Create a colored rectangle as fallback
         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('width', this.hexSize * 2.2);
-        rect.setAttribute('height', this.hexSize * 2.2);
-        rect.setAttribute('x', '0');
-        rect.setAttribute('y', '0');
+        rect.setAttribute('width', this.hexSize * 2);
+        rect.setAttribute('height', this.hexSize * 2);
+        rect.setAttribute('x', -this.hexSize);
+        rect.setAttribute('y', -this.hexSize);
         rect.setAttribute('fill', this.getTerrainColor(terrainType));
         pattern.appendChild(rect);
       });

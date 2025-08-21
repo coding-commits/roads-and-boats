@@ -421,7 +421,6 @@
             stroke-width: 3;
         }
     </style>
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
@@ -537,8 +536,44 @@
                 <svg id="gameBoard"></svg>
             </div>
         </div>
+        
+        <!-- Texture Offset Debug Tool -->
+        <div id="debugPanel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 8px; font-size: 12px; z-index: 1000; min-width: 250px;">
+            <h4 style="margin: 0 0 10px 0;">Texture Offset Debug</h4>
+            
+            <div style="margin-bottom: 8px;">
+                <label>X Offset: <span id="xOffsetValue">-30</span></label>
+                <input type="range" id="xOffsetSlider" min="-100" max="100" value="-30" step="1" style="width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 8px;">
+                <label>Y Offset: <span id="yOffsetValue">-30</span></label>
+                <input type="range" id="yOffsetSlider" min="-100" max="100" value="-30" step="1" style="width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 8px;">
+                <label>Pattern Width: <span id="patternWidthValue">60</span></label>
+                <input type="range" id="patternWidthSlider" min="30" max="150" value="60" step="5" style="width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 8px;">
+                <label>Pattern Height: <span id="patternHeightValue">60</span></label>
+                <input type="range" id="patternHeightSlider" min="30" max="150" value="60" step="5" style="width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 8px;">
+                <label>Image Scale: <span id="imageScaleValue">1.0</span></label>
+                <input type="range" id="imageScaleSlider" min="0.5" max="3.0" value="1.0" step="0.1" style="width: 100%;">
+            </div>
+            
+            <button id="resetOffsets" style="background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Reset</button>
+            <button id="copyOffsets" style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Copy Values</button>
+            
+            <div id="offsetOutput" style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-family: monospace; font-size: 10px; word-break: break-all;"></div>
+        </div>
     </div>
     
+    <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="index.js"></script>
 </body>
 </html>
