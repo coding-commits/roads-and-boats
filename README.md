@@ -1,7 +1,3 @@
-# Roads and Boats
-
-A digital implementation of the classic logistics and resource management board game "Roads and Boats" by Splotter Spellen.
-
 ![Single Player Game](resources/gameplay/single%20player%20game.png)
 
 ## Overview
