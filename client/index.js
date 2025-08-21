@@ -195,7 +195,7 @@ class RoadsAndBoatsApp {
     
     if (gameMode === 'singleplayer') {
       // Start single player game immediately
-      this.startSinglePlayerGame(maxPlayers);
+      this.startSinglePlayerGame();
     } else {
       // Create multiplayer room
       const roomName = roomNameInput.value.trim() || `${this.gameClient.playerName}'s Room`;
@@ -209,23 +209,24 @@ class RoadsAndBoatsApp {
   handleGameModeChange() {
     const gameModeSelect = document.getElementById('gameModeSelect');
     const roomNameGroup = document.getElementById('roomNameGroup');
-    const playersLabel = document.getElementById('playersLabel');
+    const playersGroup = document.querySelector('.form-group:has(#maxPlayersSelect)') || 
+                         document.getElementById('maxPlayersSelect').closest('.form-group');
     const confirmCreateBtn = document.getElementById('confirmCreateBtn');
     
     if (gameModeSelect.value === 'singleplayer') {
       roomNameGroup.style.display = 'none';
-      playersLabel.textContent = 'Virtual Players:';
+      if (playersGroup) playersGroup.style.display = 'none';
       confirmCreateBtn.textContent = 'Start Single Player';
     } else {
       roomNameGroup.style.display = 'block';
-      playersLabel.textContent = 'Max Players:';
+      if (playersGroup) playersGroup.style.display = 'block';
       confirmCreateBtn.textContent = 'Create Room';
     }
   }
 
-  startSinglePlayerGame(numPlayers) {
+  startSinglePlayerGame() {
     // Create a local single player game
-    this.gameClient.createSinglePlayerGame(numPlayers);
+    this.gameClient.createSinglePlayerGame();
     // Don't show game screen yet - wait for game_started event
   }
 

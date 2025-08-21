@@ -8,15 +8,66 @@ export class GameRenderer {
     this.selectedHex = null;
     this.selectedTransporter = null;
     this.eventHandlers = new Map();
+    this.tooltip = null;
     
     this.initializeSVG();
     this.setupEventListeners();
+    this.setupTerrainPatterns();
+    this.setupTooltip();
   }
 
   initializeSVG() {
     this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
     this.svg.style.width = '100%';
     this.svg.style.height = '100%';
+  }
+
+  setupTerrainPatterns() {
+    // Create a defs element for patterns
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    this.svg.appendChild(defs);
+
+    const terrainTextures = {
+      grassland: '/resources/tiles/terrainsHex/pastureTile.png',
+      forest: '/resources/tiles/terrainsHex/woodsTile.png',
+      mountain: '/resources/tiles/terrainsHex/mountainTile.png',
+      water: '/resources/tiles/terrainsHex/seaTile.png',
+      desert: '/resources/tiles/terrainsHex/desertTile.png',
+      pasture: '/resources/tiles/terrainsHex/pastureTile.png'
+    };
+
+    Object.entries(terrainTextures).forEach(([terrainType, imagePath]) => {
+      const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+      pattern.setAttribute('id', `terrain-${terrainType}`);
+      pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+      pattern.setAttribute('width', this.hexSize * 2);
+      pattern.setAttribute('height', this.hexSize * 2);
+
+      const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      image.setAttribute('href', imagePath);
+      image.setAttribute('width', this.hexSize * 2);
+      image.setAttribute('height', this.hexSize * 2);
+      image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+
+      pattern.appendChild(image);
+      defs.appendChild(pattern);
+    });
+  }
+
+  setupTooltip() {
+    // Create tooltip element
+    this.tooltip = document.createElement('div');
+    this.tooltip.style.position = 'absolute';
+    this.tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
+    this.tooltip.style.color = 'white';
+    this.tooltip.style.padding = '8px 12px';
+    this.tooltip.style.borderRadius = '4px';
+    this.tooltip.style.fontSize = '12px';
+    this.tooltip.style.pointerEvents = 'none';
+    this.tooltip.style.zIndex = '1000';
+    this.tooltip.style.display = 'none';
+    this.tooltip.style.maxWidth = '200px';
+    document.body.appendChild(this.tooltip);
   }
 
   setupEventListeners() {
@@ -109,14 +160,29 @@ export class GameRenderer {
     const { x, y } = this.hexToPixel(coordinate);
     const hexElement = this.createHexagon(x, y, this.hexSize);
     
-    hexElement.setAttribute('fill', this.getTerrainColor(terrain));
+    // Use texture pattern instead of solid color
+    hexElement.setAttribute('fill', `url(#terrain-${terrain})`);
     hexElement.setAttribute('class', 'hex');
     hexElement.setAttribute('data-q', coordinate.q);
     hexElement.setAttribute('data-r', coordinate.r);
+    hexElement.setAttribute('data-terrain', terrain);
     
     hexElement.addEventListener('click', (e) => {
       e.stopPropagation();
       this.handleHexClick(coordinate);
+    });
+
+    // Add hover events for tooltip
+    hexElement.addEventListener('mouseenter', (e) => {
+      this.showTooltip(e, coordinate, terrain);
+    });
+
+    hexElement.addEventListener('mousemove', (e) => {
+      this.updateTooltipPosition(e);
+    });
+
+    hexElement.addEventListener('mouseleave', () => {
+      this.hideTooltip();
     });
     
     this.svg.appendChild(hexElement);
@@ -333,6 +399,100 @@ export class GameRenderer {
       pasture: '#98FB98'
     };
     return colors[terrain] || '#DDD';
+  }
+
+  getTerrainInfo(terrain) {
+    const terrainInfo = {
+      grassland: {
+        name: 'Grassland',
+        description: 'Suitable for Clay Pits. Can build various structures.',
+        resources: 'Clay (with Clay Pit)',
+        color: '#90EE90'
+      },
+      forest: {
+        name: 'Forest',
+        description: 'Source of wood. Essential for early game resources.',
+        resources: 'Wood (with Woodcutter)',
+        color: '#228B22'
+      },
+      mountain: {
+        name: 'Mountain',
+        description: 'Rich in minerals. Source of stone, coal, iron, and gold.',
+        resources: 'Stone (Quarry), Coal (Mine), Iron (Mine), Gold (Mine)',
+        color: '#A0522D'
+      },
+      water: {
+        name: 'Water',
+        description: 'Blocks land movement. Requires boats or bridges to cross.',
+        resources: 'Navigation route for boats',
+        color: '#4682B4'
+      },
+      desert: {
+        name: 'Desert',
+        description: 'Harsh terrain. Can be source of oil with proper equipment.',
+        resources: 'Oil (with Oil Rig)',
+        color: '#F4A460'
+      },
+      pasture: {
+        name: 'Pasture',
+        description: 'Grazing land. Good for certain types of production.',
+        resources: 'Various pastoral resources',
+        color: '#98FB98'
+      }
+    };
+    return terrainInfo[terrain] || { name: 'Unknown', description: 'Unknown terrain type', resources: 'None', color: '#DDD' };
+  }
+
+  showTooltip(event, coordinate, terrain) {
+    if (!this.tooltip) return;
+    
+    const terrainInfo = this.getTerrainInfo(terrain);
+    const hexData = this.game.board.hexes ? 
+      (Array.isArray(this.game.board.hexes) ? 
+        this.game.board.hexes.find(([key, data]) => {
+          const coord = Array.isArray(data) ? data[1].coordinate : data.coordinate;
+          return coord.q === coordinate.q && coord.r === coordinate.r;
+        }) : 
+        this.game.board.hexes[coordinate.toString()]) : null;
+
+    let content = `<strong>${terrainInfo.name}</strong><br/>`;
+    content += `<em>Coordinate: (${coordinate.q}, ${coordinate.r})</em><br/>`;
+    content += `${terrainInfo.description}<br/>`;
+    content += `<strong>Resources:</strong> ${terrainInfo.resources}`;
+
+    // Add building and resource information if available
+    if (hexData) {
+      const data = Array.isArray(hexData) ? hexData[1] : hexData;
+      if (data.buildings && data.buildings.length > 0) {
+        content += `<br/><strong>Buildings:</strong> ${data.buildings.map(b => b.type).join(', ')}`;
+      }
+      if (data.resources && data.resources.length > 0) {
+        content += `<br/><strong>Current Resources:</strong> ${data.resources.map(r => `${r.quantity} ${r.type}`).join(', ')}`;
+      }
+      if (data.transporters && data.transporters.length > 0) {
+        content += `<br/><strong>Transporters:</strong> ${data.transporters.length}`;
+      }
+    }
+
+    this.tooltip.innerHTML = content;
+    this.tooltip.style.display = 'block';
+    this.updateTooltipPosition(event);
+  }
+
+  updateTooltipPosition(event) {
+    if (!this.tooltip) return;
+    
+    const x = event.clientX + 10;
+    const y = event.clientY - 10;
+    
+    this.tooltip.style.left = x + 'px';
+    this.tooltip.style.top = y + 'px';
+  }
+
+  hideTooltip() {
+    if (this.tooltip) {
+      this.tooltip.style.display = 'none';
+    }
   }
 
   getBuildingColor(buildingType) {

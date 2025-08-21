@@ -299,7 +299,8 @@ export class UIManager {
         game.players.map(([id, player]) => player) : 
         Object.values(game.players || {});
         
-    const currentPlayer = players[this.gameClient.currentPlayerIndex];
+    // In single player mode, there's only one player
+    const currentPlayer = players[0];
     
     // Update phase indicator to show current player
     const phaseIndicator = document.getElementById('phaseIndicator');

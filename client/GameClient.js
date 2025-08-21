@@ -7,7 +7,6 @@ export class GameClient {
     this.gameId = null;
     this.eventHandlers = new Map();
     this.isSinglePlayer = false;
-    this.currentPlayerIndex = 0;
   }
 
   connect() {
@@ -281,7 +280,7 @@ export class GameClient {
     }
   }
 
-  createSinglePlayerGame(numPlayers) {
+  createSinglePlayerGame() {
     // Import required classes
     import('../shared/GameState.js').then(({ GameState }) => {
       import('../shared/Player.js').then(({ Player }) => {
@@ -289,14 +288,12 @@ export class GameClient {
         this.gameId = 'single-player-' + Math.random().toString(36).substr(2, 9);
         this.playerId = 'player-0';
         
-        // Create game state
-        this.currentGame = new GameState(this.gameId, numPlayers, 'Single Player Game');
+        // Create game state for single player (max 1 player)
+        this.currentGame = new GameState(this.gameId, 1, 'Single Player Game');
         
-        // Create virtual players
-        for (let i = 0; i < numPlayers; i++) {
-          const player = new Player(`player-${i}`, `Player ${i + 1}`, this.getPlayerColor(i));
-          this.currentGame.addPlayer(player);
-        }
+        // Create only one player
+        const player = new Player('player-0', this.playerName || 'Player', this.getPlayerColor(0));
+        this.currentGame.addPlayer(player);
         
         // Start the game
         this.currentGame.start();
@@ -312,43 +309,40 @@ export class GameClient {
     return colors[index] || '#000000';
   }
 
-  nextPlayer() {
+  nextTurn() {
     if (!this.isSinglePlayer) return;
     
+    // In single player mode, just advance to the next turn/phase
+    // Reset the single player for the new turn
     const players = this.currentGame.getAllPlayers();
-    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % players.length;
-    this.playerId = `player-${this.currentPlayerIndex}`;
-    
-    // Reset movement for new player's turn
-    const currentPlayer = players[this.currentPlayerIndex];
-    currentPlayer.resetForNewTurn();
+    if (players.length > 0) {
+      players[0].resetForNewTurn();
+    }
     
     this.emit('game_update', { game: this.currentGame.toJSON() });
   }
 
   endPhase() {
     if (this.isSinglePlayer) {
-      // In single player mode, ending phase moves to next player
-      this.nextPlayer();
+      // In single player mode, advance to next phase immediately
+      this.currentGame.nextPhase();
       
-      // If we've cycled through all players, advance to next phase
-      if (this.currentPlayerIndex === 0) {
-        this.currentGame.nextPhase();
-        
-        if (this.currentGame.currentPhase === 'production') {
-          this.currentGame.executeProductionPhase();
-        }
-        
-        if (this.currentGame.checkWinCondition()) {
-          this.emit('game_finished', { 
-            winner: this.currentGame.winner,
-            finalScores: this.currentGame.getAllPlayers().map(p => ({
-              playerId: p.id,
-              name: p.name,
-              score: p.score
-            }))
-          });
-        }
+      if (this.currentGame.currentPhase === 'production') {
+        this.currentGame.executeProductionPhase();
+      }
+      
+      // Reset the player for the new phase
+      this.nextTurn();
+      
+      if (this.currentGame.checkWinCondition()) {
+        this.emit('game_finished', { 
+          winner: this.currentGame.winner,
+          finalScores: this.currentGame.getAllPlayers().map(p => ({
+            playerId: p.id,
+            name: p.name,
+            score: p.score
+          }))
+        });
       }
     } else {
       // Normal multiplayer logic
@@ -371,6 +365,5 @@ export class GameClient {
     this.currentGame = null;
     this.gameId = null;
     this.isSinglePlayer = false;
-    this.currentPlayerIndex = 0;
   }
 }
