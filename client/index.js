@@ -100,6 +100,7 @@ class RoadsAndBoatsApp {
       console.log('Game started');
       this.gameRenderer.setGame(data.game);
       this.uiManager.updateGameState(data.game);
+      this.uiManager.showGameScreen();
       this.uiManager.showMessage('Game started!', 'success');
     });
 
@@ -225,7 +226,7 @@ class RoadsAndBoatsApp {
   startSinglePlayerGame(numPlayers) {
     // Create a local single player game
     this.gameClient.createSinglePlayerGame(numPlayers);
-    this.uiManager.showGameScreen();
+    // Don't show game screen yet - wait for game_started event
   }
 
   toggleReady() {

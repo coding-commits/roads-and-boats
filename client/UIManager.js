@@ -186,16 +186,22 @@ export class UIManager {
       let statusText = 'Waiting';
       let statusClass = 'room-player-status';
       
-      // Priority for status display: current user > creator > ready
+      // Priority for status display: current user > creator, but always show ready status
       if (isCurrentUser) {
-        statusText = isCreator ? 'You (Creator)' : 'You';
+        if (isCreator) {
+          statusText = isReady ? 'You (Creator) - Ready' : 'You (Creator)';
+        } else {
+          statusText = isReady ? 'You - Ready' : 'You';
+        }
         statusClass += ' current-user';
+        if (isReady) statusClass += ' ready';
       } else if (isCreator) {
-        statusText = 'Creator';
+        statusText = isReady ? 'Creator - Ready' : 'Creator';
         statusClass += ' creator';
-      } else if (isReady) {
-        statusText = 'Ready';
-        statusClass += ' ready';
+        if (isReady) statusClass += ' ready';
+      } else {
+        statusText = isReady ? 'Ready' : 'Waiting';
+        if (isReady) statusClass += ' ready';
       }
       
       const readyIcon = isReady ? ' ✓' : '';
@@ -238,10 +244,10 @@ export class UIManager {
     
     // Update ready button
     if (isReady) {
-      readyBtn.textContent = '✓ Ready';
+      readyBtn.textContent = '✓ Ready (Click to Unready)';
       readyBtn.classList.add('ready');
     } else {
-      readyBtn.textContent = 'Ready';
+      readyBtn.textContent = 'Ready Up';
       readyBtn.classList.remove('ready');
     }
     readyBtn.disabled = false;
@@ -250,6 +256,18 @@ export class UIManager {
     if (isCreator) {
       startGameBtn.classList.remove('hidden');
       startGameBtn.disabled = !canStart;
+      
+      if (canStart) {
+        startGameBtn.textContent = 'Start Game';
+        startGameBtn.title = 'All players are ready! Click to start the game.';
+      } else if (players.length < 2) {
+        startGameBtn.textContent = 'Start Game (Need More Players)';
+        startGameBtn.title = 'Need at least 2 players to start the game.';
+      } else {
+        const notReadyCount = players.length - (game.readyPlayers?.length || 0);
+        startGameBtn.textContent = `Start Game (${notReadyCount} not ready)`;
+        startGameBtn.title = 'Waiting for all players to be ready.';
+      }
     } else {
       startGameBtn.classList.add('hidden');
     }
@@ -274,7 +292,13 @@ export class UIManager {
   }
 
   updateSinglePlayerUI(game) {
-    const players = game.getAllPlayers();
+    // Handle both serialized and non-serialized game data
+    const players = game.getAllPlayers ? 
+      game.getAllPlayers() : 
+      Array.isArray(game.players) ? 
+        game.players.map(([id, player]) => player) : 
+        Object.values(game.players || {});
+        
     const currentPlayer = players[this.gameClient.currentPlayerIndex];
     
     // Update phase indicator to show current player

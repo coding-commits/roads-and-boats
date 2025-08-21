@@ -35,5 +35,13 @@ module.exports = {
   devServer: {
     static: './dist',
     port: 3001,
+    proxy: [
+      {
+        context: ['/socket.io'],
+        target: 'http://localhost:3000',
+        ws: true,
+        changeOrigin: true
+      }
+    ]
   },
 };

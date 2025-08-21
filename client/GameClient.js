@@ -301,7 +301,8 @@ export class GameClient {
         // Start the game
         this.currentGame.start();
         
-        this.emit('game_started', { game: this.currentGame });
+        // Make sure the game is properly serialized for the renderer
+        this.emit('game_started', { game: this.currentGame.toJSON() });
       });
     });
   }
@@ -322,7 +323,7 @@ export class GameClient {
     const currentPlayer = players[this.currentPlayerIndex];
     currentPlayer.resetForNewTurn();
     
-    this.emit('game_update', { game: this.currentGame });
+    this.emit('game_update', { game: this.currentGame.toJSON() });
   }
 
   endPhase() {

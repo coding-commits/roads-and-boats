@@ -92,7 +92,10 @@ export class GameRenderer {
   renderBoard() {
     const board = this.game.board;
     
-    for (const [hexKey, hexData] of Object.entries(board.hexes)) {
+    // Handle both serialized (array) and non-serialized (Map) board.hexes
+    const hexEntries = Array.isArray(board.hexes) ? board.hexes : Object.entries(board.hexes);
+    
+    for (const [hexKey, hexData] of hexEntries) {
       if (Array.isArray(hexData)) {
         const [coordStr, data] = hexData;
         this.renderHex(data.coordinate, data.terrain);
